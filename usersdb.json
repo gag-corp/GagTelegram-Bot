@@ -1,0 +1,26 @@
+{
+  "users": [
+    {
+      "id": 526914306,
+      "is_bot": false,
+      "first_name": "Leonardo",
+      "last_name": "Ramos",
+      "username": "leosaor",
+      "language_code": "en"
+    },
+    {
+      "id": 1152051260,
+      "is_bot": false,
+      "first_name": "Gabriel",
+      "last_name": "Alves",
+      "username": "gabriel_souza04"
+    },
+    {
+      "id": 501273773,
+      "is_bot": false,
+      "first_name": "João Pedro",
+      "last_name": "Lopes",
+      "username": "JaoLSL"
+    }
+  ]
+}
