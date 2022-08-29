@@ -13,7 +13,8 @@ const file = join(__dirname, 'usersdb.json')
 const adapter = new JSONFile(file)
 const db = new Low(adapter)
 await db.read()
-db.data ||= { users: [] }
+db.data ||= { users: [], flexPlayers: [] }
+db.write();
 
 bot.start(ctx =>{
     const from = ctx.update.message.from;
@@ -28,14 +29,42 @@ bot.hears('Expoente', ctx =>{
 })
 
 bot.hears('Amouranth', ctx =>{
-    ctx.replyWithPhoto(random.randomAmouranthLinks());
+    ctx.replyWithPhoto({ url: random.randomAmouranthLinks() }, 
+    { caption: "Amouranth está online: https://www.twitch.tv/amouranth" });
 });
 
 bot.command('add', ctx =>{
     const from = ctx.update.message.from;
+    if(db.data.users.find(user => user.id === from.id)){
+        ctx.reply('Você já está cadastrado');
+        return
+    }   
     db.data.users.push(from);
     db.write();
     ctx.reply(`${from.first_name}, você foi adicionado a lista de usuários`);
+});
+
+bot.command('addflex', ctx =>{
+    const from = ctx.update.message.from;
+    if(db.data.flexPlayers.find(user => user.id === from.id)){
+        ctx.reply('Você já está cadastrado');
+        return
+    }
+    db.data.flexPlayers.push(from);
+    db.write();
+    ctx.reply(`${from.first_name}, você foi adicionado a lista de League of Legends`);
+});
+
+bot.hears(['flex', 'Flex', 'FLEX'], ctx =>{
+    const from = ctx.update.message.from;
+    let msg = `O ${from.first_name} está chamando para Flex. 4 vagas!! `;
+    db.data.flexPlayers.forEach(player =>{
+        msg += `[@${player.first_name}](tg://user?id=${player.id.toString()}) `;
+    })
+    if(msg == `O ${from.first_name} está chamando para Flex 4 vagas: `){
+        return
+    }
+    ctx.reply(msg, {parse_mode: 'Markdown'});
 });
 
 bot.command(['everyone', 'all'], ctx =>{
@@ -47,6 +76,6 @@ bot.command(['everyone', 'all'], ctx =>{
         return
     }
     ctx.reply(msg, {parse_mode: 'Markdown'});
-} );
+});
 
 bot.startPolling();
