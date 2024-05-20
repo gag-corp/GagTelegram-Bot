@@ -1,3 +1,6 @@
+import axios from 'axios';
+import puppeteer from 'puppeteer';
+import sharp from 'sharp';
 import proxmox from '../proxmox.js';
 import Random from '../random.js';
 
@@ -216,7 +219,7 @@ export const commandHandlers = (bot, databases) => {
     ctx.reply(msg, options);
   });
 
-  bot.command('clima', (ctx) => {
+  bot.command('clima', async (ctx) => {
     console.log('Command /clima used.');
     const apiKey = process.env.APIWEATHER;
     let cidade = 'Rio de Janeiro';
@@ -228,15 +231,17 @@ export const commandHandlers = (bot, databases) => {
     if (ctx.update.message.text.split(' ').length > 1) {
       cidade = ctx.update.message.text.split(' ').slice(1).join(' ');
     }
-    let url = `http://api.openweathermap.org/data/2.5/weather?q=${cidade}&appid=${apiKey}&units=metric&lang=pt_br`;
-    request(url, (error, response, body) => {
-      if (!error && response.statusCode == 200) {
-        let data = JSON.parse(body);
+    const url = `http://api.openweathermap.org/data/2.5/weather?q=${cidade}&appid=${apiKey}&units=metric&lang=pt_br`;
+  
+    try {
+      const response = await axios.get(url);
+      if (response.status === 200) {
+        const data = response.data;
         let msg = `Gaguinho Games informa: \n
                     Cidade -> ${cidade}
                     Temp atual às ${timeNow} -> ${data.main.temp}°C
                     Temp máxima -> ${data.main.temp_max}°C
-                    Temp minima -> ${data.main.temp_min}°C
+                    Temp mínima -> ${data.main.temp_min}°C
                     Umidade -> ${data.main.humidity}%
                     Céu -> ${data.weather[0].description}\n
                     Consulte outra cidade adicionando o nome da mesma após o comando /clima.`;
@@ -250,8 +255,11 @@ export const commandHandlers = (bot, databases) => {
       } else {
         ctx.reply('Cidade não encontrada');
       }
-    });
+    } catch (error) {
+      ctx.reply('Erro ao obter o clima');
+    }
   });
+  
 
   bot.command('gagsticker', (ctx) => {
     console.log('Command /gagsticker used.');

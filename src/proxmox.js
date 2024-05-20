@@ -1,27 +1,20 @@
 import axios from 'axios';
 import https from 'https';
-import request from 'request';
 
-const agent = new https.Agent({rejectUnauthorized: false,});
+const agent = new https.Agent({ rejectUnauthorized: false });
 
-function getPublicIp() {
-    return new Promise((resolve, reject) => {
-        request(
-            'https://api.ipify.org?format=json',
-            function (error, response, body) {
-                if (error) {
-                    reject(error);
-                } else {
-                    resolve(JSON.parse(body).ip);
-                }
-            }
-        );
-    });
+async function getPublicIp() {
+    try {
+        const response = await axios.get('https://api.ipify.org?format=json');
+        return response.data.ip;
+    } catch (error) {
+        throw new Error('Erro ao obter o IP público: ' + error.message);
+    }
 }
 
 async function iniciarLXC(vmId) {
     const proxmoxNode = process.env.PROXMOX_NODE;
-    const apiKey = process.env.PROXMOX_API_KEY;
+    const apiKey = process.env.POXMOX_API_KEY;
     const proxmoxHost = process.env.PROXMOX_HOST;
     const url = `${proxmoxHost}/api2/json/nodes/${proxmoxNode}/lxc/${vmId}/status/start`;
     const config = {
