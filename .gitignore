@@ -109,5 +109,8 @@ dist
 # variables configs
 src/variables.js
 
+#nodemon
+nodemon.json
+
 # databases
 data/

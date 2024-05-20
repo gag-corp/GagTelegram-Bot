@@ -1,8 +1,10 @@
+import logger from '../config/logger.js';
+
 export const actionHandlers = (bot, databases) => {
   const { r6Fila, naoMarca, flexFila } = databases;
 
   bot.action('simR6', (ctx) => {
-    console.log('simR6', ctx.from);
+    logger.info(`Action simR6 used by ${ctx.from.username} - #${ctx.from.id}`);
     let userExists = false;
     r6Fila.data.forEach((user) => {
       if (user.id === ctx.from.id) {
@@ -66,7 +68,7 @@ export const actionHandlers = (bot, databases) => {
   });
 
   bot.action('naoR6', (ctx) => {
-    console.log('naoR6', ctx.from);
+    logger.info(`Action naoR6 used by ${ctx.from.username} - #${ctx.from.id}`);
     naoMarca.data.push(ctx.from);
     naoMarca.write();
     let userExists = false;
@@ -121,7 +123,7 @@ export const actionHandlers = (bot, databases) => {
   });
 
   bot.action('simFlex', (ctx) => {
-    console.log('simFlex', ctx.from);
+    logger.info(`Action simFlex used by ${ctx.from.username} - #${ctx.from.id}`);
     let userExists = false;
     flexFila.data.forEach((user) => {
       if (user.id === ctx.from.id) {
@@ -179,7 +181,7 @@ export const actionHandlers = (bot, databases) => {
   });
 
   bot.action('naoFlex', (ctx) => {
-    console.log('naoFlex', ctx.from);
+    logger.info(`Action naoFlex used by ${ctx.from.username} - #${ctx.from.id}`);
     let userExists = false;
     flexFila.data.forEach((user) => {
       if (user.id === ctx.from.id) {

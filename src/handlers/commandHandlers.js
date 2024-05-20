@@ -1,20 +1,20 @@
 import axios from 'axios';
 import puppeteer from 'puppeteer';
 import sharp from 'sharp';
-import proxmox from '../proxmox.js';
-import Random from '../random.js';
+import logger from '../config/logger.js';
+import proxmox from '../services/proxmox.js';
+import Random from '../services/random.js';
 
 export const commandHandlers = (bot, databases) => {
   const { usersdb, dbIdea, flexFila, r6Fila, naoMarca } = databases;
 
   bot.start((ctx) => {
-    console.log('Command /start used.');
+    logger.info(`Command /start used by ${ctx.from.username} - #${ctx.from.id}`);
     ctx.reply('Bot started!');
-    console.log(ctx.chat.id);
   });
 
   bot.command('help', (ctx) => {
-    console.log('Command /help used.');
+    logger.info(`Command /help used by ${ctx.from.username} - #${ctx.from.id}`);
     ctx.reply(
       `Comandos disponíveis:
             /help - Mostra os comandos disponíveis;
@@ -38,7 +38,7 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('ideia', (ctx) => {
-    console.log('Command /ideia used.');
+    logger.info(`Command /ideia used by ${ctx.from.username} - #${ctx.from.id}`);
     const from = ctx.update.message.from;
     const ideia = ctx.update.message.text.split(' ').slice(1).join(' ');
     if (!ideia) {
@@ -54,7 +54,7 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('ideias', (ctx) => {
-    console.log('Command /ideias used.');
+    logger.info(`Command /ideias used by ${ctx.from.username} - #${ctx.from.id}`);
     if (dbIdea.data.ideias.length == 0) {
       ctx.reply('Nenhuma ideia cadastrada');
       return;
@@ -67,7 +67,7 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('delideia', (ctx) => {
-    console.log('Command /delideia used.');
+    logger.info(`Command /delideia used by ${ctx.from.username} - #${ctx.from.id}`);
     const from = ctx.update.message.from;
     const id = ctx.update.message.text.split(' ').slice(1).join(' ');
     if (!id) {
@@ -83,7 +83,7 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('iniciarmine', async (ctx) => {
-    console.log('Command /iniciarmine used.');
+    logger.info(`Command /iniciarmine used by ${ctx.from.username} - #${ctx.from.id}`);
     try {
       const resposta = await proxmox.iniciarLXC(201);
       ctx.reply(resposta);
@@ -93,7 +93,7 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('minecraft', async (ctx) => {
-    console.log('Command /minecraft used.');
+    logger.info(`Command /minecraft used by ${ctx.from.username} - #${ctx.from.id}`);
     try {
       const resposta = await proxmox.verificarLXC(201);
       ctx.reply(resposta);
@@ -103,7 +103,7 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('reiniciarmine', async (ctx) => {
-    console.log('Command /reiniciarmine used.');
+    logger.info(`Command /reiniciarmine used by ${ctx.from.username} - #${ctx.from.id}`);
     try {
       const resposta = await proxmox.reiniciarLXC(201);
       ctx.reply(resposta);
@@ -113,7 +113,7 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('addeveryone', (ctx) => {
-    console.log('Command /addeveryone used.');
+    logger.info(`Command /addeveryone used by ${ctx.from.username} - #${ctx.from.id}`);
     const from = ctx.update.message.from;
     if (usersdb.data.users.find((user) => user.id === from.id)) {
       ctx.reply('Você já está cadastrado');
@@ -125,7 +125,7 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('addr6', (ctx) => {
-    console.log('Command /addr6 used.');
+    logger.info(`Command /addr6 used by ${ctx.from.username} - #${ctx.from.id}`);
     const from = ctx.update.message.from;
     if (usersdb.data.r6Players.find((user) => user.id === from.id)) {
       ctx.reply('Você já está cadastrado');
@@ -139,7 +139,7 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('addprogrammer', (ctx) => {
-    console.log('Command /addprogrammer used.');
+    logger.info(`Command /addprogrammer used by ${ctx.from.username} - #${ctx.from.id}`);
     const from = ctx.update.message.from;
     if (usersdb.data.programmers.find((user) => user.id === from.id)) {
       ctx.reply('Você já está cadastrado');
@@ -153,7 +153,7 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('addflex', (ctx) => {
-    console.log('Command /addflex used.');
+    logger.info(`Command /addflex used by ${ctx.from.username} - #${ctx.from.id}`);
     const from = ctx.update.message.from;
     if (usersdb.data.flexPlayers.find((user) => user.id === from.id)) {
       ctx.reply('Você já está cadastrado');
@@ -167,7 +167,7 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command(['everyone', 'all', 'familia'], (ctx) => {
-    console.log('Command /everyone used.');
+    logger.info(`Command /everyone used by ${ctx.from.username} - #${ctx.from.id}`);
     if (usersdb.data.users.length == 0) {
       ctx.reply('Ninguém está cadastrado');
       return;
@@ -198,7 +198,7 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('programmers', (ctx) => {
-    console.log('Command /programmers used.');
+    logger.info(`Command /programmers used by ${ctx.from.username} - #${ctx.from.id}`);
     if (usersdb.data.programmers.length === 0) {
       ctx.reply('Ninguém está cadastrado');
       return;
@@ -220,7 +220,7 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('clima', async (ctx) => {
-    console.log('Command /clima used.');
+    logger.info(`Command /clima used by ${ctx.from.username} - #${ctx.from.id}`);
     const apiKey = process.env.APIWEATHER;
     let cidade = 'Rio de Janeiro';
     const date = new Date();
@@ -232,7 +232,7 @@ export const commandHandlers = (bot, databases) => {
       cidade = ctx.update.message.text.split(' ').slice(1).join(' ');
     }
     const url = `http://api.openweathermap.org/data/2.5/weather?q=${cidade}&appid=${apiKey}&units=metric&lang=pt_br`;
-  
+
     try {
       const response = await axios.get(url);
       if (response.status === 200) {
@@ -259,16 +259,15 @@ export const commandHandlers = (bot, databases) => {
       ctx.reply('Erro ao obter o clima');
     }
   });
-  
 
   bot.command('gagsticker', (ctx) => {
-    console.log('Command /gagsticker used.');
+    logger.info(`Command /gagsticker used by ${ctx.from.username} - #${ctx.from.id}`);
     const sticker_id = Random.randomSticker();
     ctx.replyWithSticker(sticker_id);
   });
 
   bot.command('statsr6', async (ctx) => {
-    console.log('statsr6', ctx.from);
+    logger.info(`Command /statsr6 used by ${ctx.from.username} - #${ctx.from.id}`);
     const browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
@@ -297,7 +296,7 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('r6', (ctx) => {
-    console.log('Command /r6 used.');
+    logger.info(`Command /r6 used by ${ctx.from.username} - #${ctx.from.id}`);
     naoMarca.data = [];
     r6Fila.data = [];
     r6Fila.data.push(ctx.from);
@@ -327,7 +326,7 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('flex', (ctx) => {
-    console.log('Flex', ctx.from);
+    logger.info(`Command /flex used by ${ctx.from.username} - #${ctx.from.id}`);
     flexFila.data = [];
     flexFila.data.push(ctx.from);
     flexFila.write();
