@@ -109,5 +109,5 @@ dist
 # variables configs
 src/variables.js
 
-# db
-usersdb.json
+# databases
+data/
