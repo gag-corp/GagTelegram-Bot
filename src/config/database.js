@@ -40,5 +40,15 @@ export const initializeDatabases = async () => {
     dbIdea.data ||= { ideias: [] };
     await dbIdea.write();
 
-    return { usersdb, flexFila, r6Fila, naoMarca, dbIdea };
+    const remindersDb = dbConfig('reminders.json');
+    await remindersDb.read();
+    remindersDb.data ||= { reminders: [] };
+    await remindersDb.write();
+
+    const birthdaysDb = dbConfig('birthdays.json');
+    await birthdaysDb.read();
+    birthdaysDb.data ||= { birthdays: [] };
+    await birthdaysDb.write();
+
+    return { usersdb, flexFila, r6Fila, naoMarca, dbIdea, remindersDb, birthdaysDb};
 };

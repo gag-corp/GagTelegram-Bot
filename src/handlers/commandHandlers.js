@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { compareAsc, format, isValid, parse, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import puppeteer from 'puppeteer';
 import sharp from 'sharp';
 import logger from '../config/logger.js';
@@ -6,10 +8,15 @@ import proxmox from '../services/proxmox.js';
 import Random from '../services/random.js';
 
 export const commandHandlers = (bot, databases) => {
-  const { usersdb, dbIdea, flexFila, r6Fila, naoMarca } = databases;
+  const { usersdb, dbIdea, flexFila, r6Fila, naoMarca, remindersDb, birthdaysDb } =
+    databases;
+
+  let awaitingOcr = new Map();
 
   bot.start((ctx) => {
-    logger.info(`Command /start used by ${ctx.from.username} - #${ctx.from.id}`);
+    logger.info(
+      `Command /start used by ${ctx.from.username} - #${ctx.from.id}`
+    );
     ctx.reply('Bot started!');
   });
 
@@ -37,8 +44,169 @@ export const commandHandlers = (bot, databases) => {
     );
   });
 
+  bot.command('ocr', (ctx) => {
+    logger.info(`Command /ocr used by ${ctx.from.username} - #${ctx.from.id}`);
+    ctx.reply('Envie a imagem que deseja reconhecer o texto');
+    awaitingOcr.set(ctx.chat.id, true);
+  });
+
+  bot.on('photo', async (ctx) => {
+    if (!awaitingOcr.get(ctx.chat.id)) {
+      logger.info(`Photo received by ${ctx.from.username} - #${ctx.from.id} but not expecting it`);
+      return;
+    }
+    try{
+      const fileId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
+      const fileUrl = await bot.telegram.getFileLink(fileId);
+
+      const imageBuffer = await axios.get(fileUrl, { responseType: 'arraybuffer' }).then(res => res.data);
+      const preprocessedImage = await preprocessImageForOcr(imageBuffer);
+
+      const text = await Random.textFromImage(preprocessedImage);
+      logger.info(`Texto reconhecido: ${text}`);
+      ctx.reply(text);
+    } catch (error) {
+      logger.error(`Erro ao reconhecer o texto da imagem: ${error}`);
+      ctx.reply('Erro ao reconhecer o texto da imagem');
+    } finally {
+      awaitingOcr.delete(ctx.chat.id);
+    }
+  });
+
+  async function preprocessImageForOcr(imageBuffer) {
+    return await sharp(imageBuffer)
+      .resize({width: 1024})
+      .grayscale()
+      .normalize()
+      .sharpen()
+      .toBuffer();
+  }
+
+
+  bot.command('lembrete', async (ctx) => {
+    const from = ctx.message.from;
+    const messageId = ctx.message.message_id;
+    const chatId = ctx.message.chat.id;
+
+    const [_, dateStr, timeStr, ...msgParts] = ctx.message.text.split(' ');
+    const msg = msgParts.join(' ');
+
+    const datetimeStr = `${dateStr} ${timeStr}`;
+    const datetime = parse(datetimeStr, 'dd/MM/yyyy HH:mm', new Date(), {
+      locale: ptBR,
+    });
+
+    if (!isValid(datetime)) {
+      logger.warn(`Formato de data ou hora inválido: ${datetimeStr}`);
+      ctx.reply('Formato de data ou hora inválido. Use DD/MM/YYYY HH:mm');
+      return;
+    }
+
+    remindersDb.data.reminders.push({
+      chatId,
+      messageId,
+      userId: from.id,
+      username: from.username,
+      reminderText: msg,
+      reminderTime: datetime.toISOString(),
+    });
+
+    await remindersDb.write();
+
+    logger.info(
+      `Lembrete agendado para ${datetimeStr} por ${from.username} - #${from.id}`
+    );
+    ctx.reply(
+      `Lembrete agendado para ${format(datetime, 'dd/MM/yyyy HH:mm', {
+        locale: ptBR,
+      })}.`
+    );
+  });
+
+  bot.command('listarLembretes', (ctx) => {
+    logger.info(
+      `Command /listar_lembretes used by ${ctx.from.username} - #${ctx.from.id}`
+    );
+    const reminders = remindersDb.data.reminders;
+    if (reminders.length === 0) {
+      ctx.reply('Nenhum lembrete agendado.');
+      return;
+    }
+
+    let message = 'Lembretes agendados:\n';
+    reminders.forEach((reminder, index) => {
+      const reminderTime = format(
+        new Date(reminder.reminderTime),
+        'dd/MM/yyyy HH:mm',
+        { locale: ptBR }
+      );
+      message += `${index + 1}. @${reminder.username}: ${
+        reminder.reminderText
+      } em ${reminderTime}\n`;
+    });
+
+    ctx.reply(message);
+  });
+
+  bot.command('addaniversario', (ctx) => {
+    logger.info(
+      `Command /addAniversario used by ${ctx.from.username} - #${ctx.from.id}`
+    );
+    const [command, username, date] = ctx.message.text.split(' ');
+    if (!username || !date) {
+      return ctx.reply('Use o formato: /addbirthday @username DD/MM ou DD/MM/YYYY');
+    }
+
+    const [day, month, year] = date.split('/');
+    let isoDate;
+    if (year) {
+      isoDate = `${year}-${month}-${day}`;
+    } else {
+      isoDate = `${new Date().getFullYear()}-${month}-${day}`;
+    }
+
+    birthdaysDb.data.birthdays.push({
+      username: username.replace('@', ''),
+      date: isoDate,
+      chatId: ctx.chat.id,
+    });
+    birthdaysDb.write();
+
+    ctx.reply(`Aniversário do ${username} adicionado para o dia ${date}`);
+  });
+
+
+
+  bot.command('aniversarios', (ctx) => {
+    if (birthdaysDb.data.birthdays.length === 0) {
+      return ctx.reply('Nenhum aniversário cadastrado.');
+    }
+
+    const sortedBirthdays = birthdaysDb.data.birthdays.sort((a, b) => {
+      const dateA = parseISO(a.date);
+      const dateB = parseISO(b.date);
+      return compareAsc(dateA, dateB);
+    });
+
+    let message = 'Aniversários:\n';
+    sortedBirthdays.forEach((birthday) => {
+      const dateObj = parseISO(birthday.date);
+      let formattedDate;
+      if (birthday.date.length === 10) {
+        formattedDate = format(dateObj, 'dd/MM/yyyy');
+      } else {
+        formattedDate = format(dateObj, 'dd/MM');
+      }
+      message += `${birthday.username}: ${formattedDate}\n`;
+    });
+
+    ctx.reply(message);
+  });
+
   bot.command('ideia', (ctx) => {
-    logger.info(`Command /ideia used by ${ctx.from.username} - #${ctx.from.id}`);
+    logger.info(
+      `Command /ideia used by ${ctx.from.username} - #${ctx.from.id}`
+    );
     const from = ctx.update.message.from;
     const ideia = ctx.update.message.text.split(' ').slice(1).join(' ');
     if (!ideia) {
@@ -54,7 +222,9 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('ideias', (ctx) => {
-    logger.info(`Command /ideias used by ${ctx.from.username} - #${ctx.from.id}`);
+    logger.info(
+      `Command /ideias used by ${ctx.from.username} - #${ctx.from.id}`
+    );
     if (dbIdea.data.ideias.length == 0) {
       ctx.reply('Nenhuma ideia cadastrada');
       return;
@@ -67,7 +237,9 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('delideia', (ctx) => {
-    logger.info(`Command /delideia used by ${ctx.from.username} - #${ctx.from.id}`);
+    logger.info(
+      `Command /delideia used by ${ctx.from.username} - #${ctx.from.id}`
+    );
     const from = ctx.update.message.from;
     const id = ctx.update.message.text.split(' ').slice(1).join(' ');
     if (!id) {
@@ -83,7 +255,9 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('iniciarmine', async (ctx) => {
-    logger.info(`Command /iniciarmine used by ${ctx.from.username} - #${ctx.from.id}`);
+    logger.info(
+      `Command /iniciarmine used by ${ctx.from.username} - #${ctx.from.id}`
+    );
     try {
       const resposta = await proxmox.iniciarLXC(201);
       ctx.reply(resposta);
@@ -93,7 +267,9 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('minecraft', async (ctx) => {
-    logger.info(`Command /minecraft used by ${ctx.from.username} - #${ctx.from.id}`);
+    logger.info(
+      `Command /minecraft used by ${ctx.from.username} - #${ctx.from.id}`
+    );
     try {
       const resposta = await proxmox.verificarLXC(201);
       ctx.reply(resposta);
@@ -103,7 +279,9 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('reiniciarmine', async (ctx) => {
-    logger.info(`Command /reiniciarmine used by ${ctx.from.username} - #${ctx.from.id}`);
+    logger.info(
+      `Command /reiniciarmine used by ${ctx.from.username} - #${ctx.from.id}`
+    );
     try {
       const resposta = await proxmox.reiniciarLXC(201);
       ctx.reply(resposta);
@@ -113,7 +291,9 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('addeveryone', (ctx) => {
-    logger.info(`Command /addeveryone used by ${ctx.from.username} - #${ctx.from.id}`);
+    logger.info(
+      `Command /addeveryone used by ${ctx.from.username} - #${ctx.from.id}`
+    );
     const from = ctx.update.message.from;
     if (usersdb.data.users.find((user) => user.id === from.id)) {
       ctx.reply('Você já está cadastrado');
@@ -125,7 +305,9 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('addr6', (ctx) => {
-    logger.info(`Command /addr6 used by ${ctx.from.username} - #${ctx.from.id}`);
+    logger.info(
+      `Command /addr6 used by ${ctx.from.username} - #${ctx.from.id}`
+    );
     const from = ctx.update.message.from;
     if (usersdb.data.r6Players.find((user) => user.id === from.id)) {
       ctx.reply('Você já está cadastrado');
@@ -139,7 +321,9 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('addprogrammer', (ctx) => {
-    logger.info(`Command /addprogrammer used by ${ctx.from.username} - #${ctx.from.id}`);
+    logger.info(
+      `Command /addprogrammer used by ${ctx.from.username} - #${ctx.from.id}`
+    );
     const from = ctx.update.message.from;
     if (usersdb.data.programmers.find((user) => user.id === from.id)) {
       ctx.reply('Você já está cadastrado');
@@ -153,7 +337,9 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('addflex', (ctx) => {
-    logger.info(`Command /addflex used by ${ctx.from.username} - #${ctx.from.id}`);
+    logger.info(
+      `Command /addflex used by ${ctx.from.username} - #${ctx.from.id}`
+    );
     const from = ctx.update.message.from;
     if (usersdb.data.flexPlayers.find((user) => user.id === from.id)) {
       ctx.reply('Você já está cadastrado');
@@ -167,7 +353,9 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command(['everyone', 'all', 'familia'], (ctx) => {
-    logger.info(`Command /everyone used by ${ctx.from.username} - #${ctx.from.id}`);
+    logger.info(
+      `Command /everyone used by ${ctx.from.username} - #${ctx.from.id}`
+    );
     if (usersdb.data.users.length == 0) {
       ctx.reply('Ninguém está cadastrado');
       return;
@@ -198,7 +386,9 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('programmers', (ctx) => {
-    logger.info(`Command /programmers used by ${ctx.from.username} - #${ctx.from.id}`);
+    logger.info(
+      `Command /programmers used by ${ctx.from.username} - #${ctx.from.id}`
+    );
     if (usersdb.data.programmers.length === 0) {
       ctx.reply('Ninguém está cadastrado');
       return;
@@ -220,7 +410,9 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('clima', async (ctx) => {
-    logger.info(`Command /clima used by ${ctx.from.username} - #${ctx.from.id}`);
+    logger.info(
+      `Command /clima used by ${ctx.from.username} - #${ctx.from.id}`
+    );
     const apiKey = process.env.APIWEATHER;
     let cidade = 'Rio de Janeiro';
     const date = new Date();
@@ -261,13 +453,17 @@ export const commandHandlers = (bot, databases) => {
   });
 
   bot.command('gagsticker', (ctx) => {
-    logger.info(`Command /gagsticker used by ${ctx.from.username} - #${ctx.from.id}`);
+    logger.info(
+      `Command /gagsticker used by ${ctx.from.username} - #${ctx.from.id}`
+    );
     const sticker_id = Random.randomSticker();
     ctx.replyWithSticker(sticker_id);
   });
 
   bot.command('statsr6', async (ctx) => {
-    logger.info(`Command /statsr6 used by ${ctx.from.username} - #${ctx.from.id}`);
+    logger.info(
+      `Command /statsr6 used by ${ctx.from.username} - #${ctx.from.id}`
+    );
     const browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
@@ -295,7 +491,7 @@ export const commandHandlers = (bot, databases) => {
     await ctx.replyWithPhoto({ source: output });
   });
 
-  bot.command('r6', (ctx) => {
+  bot.command('r6', async (ctx) => {
     logger.info(`Command /r6 used by ${ctx.from.username} - #${ctx.from.id}`);
     naoMarca.data = [];
     r6Fila.data = [];

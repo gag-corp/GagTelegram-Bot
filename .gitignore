@@ -112,5 +112,9 @@ src/variables.js
 #nodemon
 nodemon.json
 
+#ocr
+eng.traineddata
+por.traineddata
+
 # databases
 data/
