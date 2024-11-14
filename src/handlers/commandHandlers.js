@@ -8,10 +8,8 @@ import proxmox from '../services/proxmox.js';
 import Random from '../services/random.js';
 
 export const commandHandlers = (bot, databases) => {
-  const { usersdb, dbIdea, flexFila, r6Fila, naoMarca, remindersDb, birthdaysDb } =
+  const { usersdb, dbIdea, flexFila, r6Fila, naoMarca, naoMarcaFlex, remindersDb, birthdaysDb } =
     databases;
-
-  let awaitingOcr = new Map();
 
   bot.start((ctx) => {
     logger.info(
@@ -36,7 +34,6 @@ export const commandHandlers = (bot, databases) => {
             /addr6 - Adiciona você a lista de jogadores de R6;
             /clima - Mostra o clima de uma cidade;
             /gagsticker - Envia um sticker aleatório;
-            /fazuelly - Envia o áudio do Fazuelly;
             /statsr6 - Mostra o status do servidor de R6;
             /ideia - Salva uma ideia;
             /ideias - Mostra as ideias salvas;
@@ -44,44 +41,20 @@ export const commandHandlers = (bot, databases) => {
     );
   });
 
-  bot.command('ocr', (ctx) => {
-    logger.info(`Command /ocr used by ${ctx.from.username} - #${ctx.from.id}`);
-    ctx.reply('Envie a imagem que deseja reconhecer o texto');
-    awaitingOcr.set(ctx.chat.id, true);
-  });
-
-  bot.on('photo', async (ctx) => {
-    if (!awaitingOcr.get(ctx.chat.id)) {
-      logger.info(`Photo received by ${ctx.from.username} - #${ctx.from.id} but not expecting it`);
-      return;
-    }
-    try{
-      const fileId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
-      const fileUrl = await bot.telegram.getFileLink(fileId);
-
-      const imageBuffer = await axios.get(fileUrl, { responseType: 'arraybuffer' }).then(res => res.data);
-      const preprocessedImage = await preprocessImageForOcr(imageBuffer);
-
-      const text = await Random.textFromImage(preprocessedImage);
-      logger.info(`Texto reconhecido: ${text}`);
-      ctx.reply(text);
-    } catch (error) {
-      logger.error(`Erro ao reconhecer o texto da imagem: ${error}`);
-      ctx.reply('Erro ao reconhecer o texto da imagem');
-    } finally {
-      awaitingOcr.delete(ctx.chat.id);
+  bot.command('google', (ctx) => {
+    logger.info(`Command /google used by ${ctx.from.username} - #${ctx.from.id}`);
+    if (ctx.message.reply_to_message) {
+      if (ctx.message.reply_to_message.photo || ctx.message.reply_to_message.sticker) {
+        ctx.reply('Não consigo pesquisar imagens, apenas textos');
+        return;
+      }
+      const message = ctx.message.reply_to_message.text;
+      const msg = message.replace(/ /g, '+');
+      ctx.reply(`https://letmegooglethat.com/?q=${msg}`);
+    } else {
+      ctx.reply('Use respondendo a uma mensagem');
     }
   });
-
-  async function preprocessImageForOcr(imageBuffer) {
-    return await sharp(imageBuffer)
-      .resize({width: 1024})
-      .grayscale()
-      .normalize()
-      .sharpen()
-      .toBuffer();
-  }
-
 
   bot.command('lembrete', async (ctx) => {
     const from = ctx.message.from;
@@ -174,8 +147,6 @@ export const commandHandlers = (bot, databases) => {
 
     ctx.reply(`Aniversário do ${username} adicionado para o dia ${date}`);
   });
-
-
 
   bot.command('aniversarios', (ctx) => {
     if (birthdaysDb.data.birthdays.length === 0) {
@@ -523,6 +494,7 @@ export const commandHandlers = (bot, databases) => {
 
   bot.command('flex', (ctx) => {
     logger.info(`Command /flex used by ${ctx.from.username} - #${ctx.from.id}`);
+    naoMarcaFlex.data = [];
     flexFila.data = [];
     flexFila.data.push(ctx.from);
     flexFila.write();

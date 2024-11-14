@@ -116,5 +116,7 @@ nodemon.json
 eng.traineddata
 por.traineddata
 
-# databases
+# others
 data/
+logs/
+deploy.sh

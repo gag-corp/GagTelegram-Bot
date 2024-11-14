@@ -1,10 +1,14 @@
 import logger from '../config/logger.js';
 
 export const actionHandlers = (bot, databases) => {
-  const { r6Fila, naoMarca, flexFila } = databases;
+  const { r6Fila, naoMarca, flexFila, naoMarcaFlex } = databases;
 
   bot.action('simR6', (ctx) => {
     logger.info(`Action simR6 used by ${ctx.from.username} - #${ctx.from.id}`);
+    if (ctx.from.id === 512659027) {
+      ctx.reply('O Hugo é doente mental.');
+      return;
+    }
     let userExists = false;
     r6Fila.data.forEach((user) => {
       if (user.id === ctx.from.id) {
@@ -133,6 +137,7 @@ export const actionHandlers = (bot, databases) => {
     if (!userExists) {
       flexFila.data.push(ctx.from);
       flexFila.write();
+      ctx.deleteMessage();
       let fila = ``;
       flexFila.data.forEach((user) => {
         fila += `${user.first_name}, `;
@@ -150,11 +155,16 @@ export const actionHandlers = (bot, databases) => {
         if (foundInflexFila) {
           return;
         }
+        const foundInnaoMarcaFlex = naoMarcaFlex.data.find((user) => {
+          return user.id === player.id;
+        });
+        if (foundInnaoMarcaFlex) {
+          return;
+        }
         const mention = player.username || player.first_name;
         msg += `[@${mention}](tg://user?id=${player.id.toString()}) `;
       });
-      ctx.deleteMessage();
-      if (flexFila.data.length === 1) {
+      if (flexFila.data.length === 5) {
         return ctx.replyWithMarkdown(
           `O Lobby ta cheio!\n${fila}estão na fila!`,
           {
@@ -182,6 +192,8 @@ export const actionHandlers = (bot, databases) => {
 
   bot.action('naoFlex', (ctx) => {
     logger.info(`Action naoFlex used by ${ctx.from.username} - #${ctx.from.id}`);
+    naoMarcaFlex.data.push(ctx.from);
+    naoMarcaFlex.write();
     let userExists = false;
     flexFila.data.forEach((user) => {
       if (user.id === ctx.from.id) {
@@ -210,6 +222,12 @@ export const actionHandlers = (bot, databases) => {
         if (foundInflexFila) {
           return;
         }
+        const foundInnaoMarcaFlex = naoMarcaFlex.data.find((user) => {
+          return user.id === player.id;
+        });
+        if (foundInnaoMarcaFlex) {
+          return;
+        }
         const mention = player.username || player.first_name;
         msg += `[@${mention}](tg://user?id=${player.id.toString()}) `;
       });
@@ -226,4 +244,4 @@ export const actionHandlers = (bot, databases) => {
       });
     }
   });
-};
+}

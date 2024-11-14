@@ -1,6 +1,7 @@
 import { format, isBefore, parseISO } from 'date-fns';
 import schedule from 'node-schedule';
 import logger from '../config/logger.js';
+import checkRace from './raceChecker.js';
 
 export async function checkReminders(databases, bot) {
   const { remindersDb } = databases;
@@ -63,5 +64,10 @@ export function scheduleJobs(databases, bot) {
 
   schedule.scheduleJob('0 0 * * *', () => {
     checkBirthdays(databases, bot);
+  });
+
+  const chatId = process.env.RODIZINHO_CHATID;
+  schedule.scheduleJob('*/5 * * * *', () => {
+    checkRace(bot, chatId);
   });
 }

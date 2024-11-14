@@ -35,6 +35,10 @@ export const initializeDatabases = async () => {
     await naoMarca.read();
     await naoMarca.write();
 
+    const naoMarcaFlex = dbConfig('naoMarcaFlex.json');
+    await naoMarcaFlex.read();
+    await naoMarcaFlex.write();
+
     const dbIdea = dbConfig('ideias.json');
     await dbIdea.read();
     dbIdea.data ||= { ideias: [] };
@@ -50,5 +54,11 @@ export const initializeDatabases = async () => {
     birthdaysDb.data ||= { birthdays: [] };
     await birthdaysDb.write();
 
-    return { usersdb, flexFila, r6Fila, naoMarca, dbIdea, remindersDb, birthdaysDb};
+    const sacDb = dbConfig('sac.json');
+    await sacDb.read();
+    sacDb.data ||= { reclamacoes: {} };
+    await sacDb.write();
+
+
+    return { usersdb, flexFila, r6Fila, naoMarca, naoMarcaFlex, dbIdea, remindersDb, birthdaysDb, sacDb };
 };
