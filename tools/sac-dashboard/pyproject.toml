@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "gag-corp-telegram-sac-dashboard"
+version = "0.1.0"
+description = ""
+authors = ["Matheus Mello <mellomatheuslima@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+streamlit = "^1.40.1"
+python-dotenv = "^1.0.1"
+pandas = "^2.2.3"
+altair = "^5.4.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,167 @@
+{
+  "reclamacoes": {
+    "expoente": {
+      "count": 1,
+      "reclamacoes": [
+        {
+          "from": {
+            "id": 1867201558,
+            "first_name": "Bruno"
+          },
+          "message": "tirou foto minha durante a aula sem consentimento",
+          "date": "12/11/2024, 21:52:33"
+        }
+      ]
+    },
+    "gio": {
+      "count": 4,
+      "reclamacoes": [
+        {
+          "from": {
+            "id": 526914306,
+            "username": "leosaor",
+            "first_name": "Leonardo"
+          },
+          "message": "Deu go 2x seguidas sem o lecandre e tomamos ban de 15min",
+          "date": "14/11/2024, 01:25:56"
+        },
+        {
+          "from": {
+            "id": 1867201558,
+            "first_name": "Bruno"
+          },
+          "message": "foi burro e jogou a culpa em mim",
+          "date": "14/11/2024, 01:25:02"
+        },
+        {
+          "from": {
+            "id": 501273773,
+            "username": "JaoLSL",
+            "first_name": "João Pedro"
+          },
+          "message": "não avisou que era saideira",
+          "date": "14/11/2024, 01:25:02"
+        },
+        {
+          "from": {
+            "id": 501273773,
+            "username": "JaoLSL",
+            "first_name": "João Pedro"
+          },
+          "message": "ser cringe e não entender convites implícitos",
+          "date": "14/11/2024, 18:52:06"
+        }
+      ]
+    },
+    "lecandre": {
+      "count": 4,
+      "reclamacoes": [
+        {
+          "from": {
+            "id": 334724940,
+            "username": "rodizinho",
+            "first_name": "Rodrigo"
+          },
+          "message": "não subiu a rampa comigo ontem",
+          "date": "12/11/2024, 21:46:10"
+        },
+        {
+          "from": {
+            "id": 334724940,
+            "username": "rodizinho",
+            "first_name": "Rodrigo"
+          },
+          "message": "muito uso de emoji de nerd",
+          "date": "12/11/2024, 21:51:14"
+        },
+        {
+          "from": {
+            "id": 526914306,
+            "username": "leosaor",
+            "first_name": "Leonardo"
+          },
+          "message": "promotor da flex é INSUPORTAVEL",
+          "date": "13/11/2024, 19:58:14"
+        },
+        {
+          "from": {
+            "id": 315129472,
+            "username": "mellomaths",
+            "first_name": "Matheus"
+          },
+          "message": "ta chatinho pra caralho",
+          "date": "14/11/2024, 01:18:14"
+        }
+      ]
+    },
+    "mello": {
+      "count": 1,
+      "reclamacoes": [
+        {
+          "from": {
+            "id": 334724940,
+            "username": "rodizinho",
+            "first_name": "Rodrigo"
+          },
+          "message": "so faz reclamação BURRA",
+          "date": "14/11/2024, 17:37:02"
+        }
+      ]
+    },
+    "joao": {
+      "count": 1,
+      "reclamacoes": [
+        {
+          "from": {
+            "id": 526914306,
+            "username": "leosaor",
+            "first_name": "Leonardo"
+          },
+          "message": "nao ganka mid",
+          "date": "14/11/2024, 02:28:06"
+        }
+      ]
+    },
+    "rodizinho": {
+      "count": 4,
+      "reclamacoes": [
+        {
+          "from": {
+            "id": 315129472,
+            "username": "Matheus",
+            "first_name": "mellomaths"
+          },
+          "message": "teaser e rollout da diss infinito perdeu adesão do ouvinte",
+          "date": "13/11/2024, 20:01:06"
+        },
+        {
+          "from": {
+            "id": 501273773,
+            "username": "JaoLSL",
+            "first_name": "João Pedro"
+          },
+          "message": "quer divulgar tigrinho",
+          "date": "14/11/2024, 01:25:02"
+        },
+        {
+          "from": {
+            "id": 315129472,
+            "username": "Matheus",
+            "first_name": "mellomaths"
+          },
+          "message": "fazendo boca de urna pra sac do lecandre",
+          "date": "14/11/2024, 02:11:02"
+        },
+        {
+          "from": {
+            "id": 315129472,
+            "username": "Matheus",
+            "first_name": "mellomaths"
+          },
+          "message": "toda hora esse papinho de aiiin banalizaram o sac serviço de atendimento ao cliente chato pra caralho ja",
+          "date": "14/11/2024, 17:14:02"
+        }
+      ]
+    }
+  }
+}
